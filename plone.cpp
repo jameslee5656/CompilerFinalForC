@@ -242,7 +242,7 @@ void Error(int n)
     }
     declarator();
     // Need more modify {<declaration>}* ?? only symSCSBEGIN ~ symTSEND ??
-    while((token->sym > symSCSBEGIN )and(token->sym < symTSEND)){
+    while(((token->sym > symSCSBEGIN )and(token->sym < symTSEND)) or(token->sym == symLPAREN)){
       cout << "Debug function_definition"  << endl;
       declaration();
     }
@@ -884,7 +884,8 @@ void Error(int n)
       cout << "Debug Into (<declarator>)" << endl;
       token = nextToken();
       cout << "Debug next token: " << token->value << endl;
-      declarator();
+      // ?? Not sure how to do this part -> need to ignore the null
+      // declarator();
     }
     else Error(2);
         // else
