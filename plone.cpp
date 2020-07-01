@@ -243,7 +243,7 @@ void Error(int n)
     declarator();
     // Need more modify {<declaration>}* ?? only symSCSBEGIN ~ symTSEND ??
     while(((token->sym > symSCSBEGIN )and(token->sym < symTSEND)) or(token->sym == symLPAREN)){
-      cout << "Debug function_definition"  << endl;
+      cout << "Debug function_definition "  << endl;
       declaration();
     }
     compound_statement();
@@ -876,7 +876,8 @@ void Error(int n)
       snprintf(buf, 10, "_main:\n");
       fputs(buf, outfile);
       token = nextToken();
-      
+      // The flag that use for Detemine if it is first in function 
+      FirstFunction = false;
         // if (token->sym == symSEMI) token = nextToken();
         // else Error(3);
     }
@@ -1053,7 +1054,8 @@ void declaration(){
   }
   else{
     cout << token->value << endl;
-    Error(29);
+    cout << "Debug should be error but not finish yet" << endl;
+    // Error(29);
   }
   init_declarator();
 }
@@ -1082,13 +1084,14 @@ void initializer(){
 void compound_statement(){
   cout << "Debug Into #52 Compound Statement" << endl;
   if (token->sym == symLCURLY){
+    token = nextToken();
+    cout << "Debug After LCURLY " << token->value << endl;
     while((token->sym > symSCSBEGIN )and(token->sym < symTSEND)){
       declaration();
     }
     // Need more Adjust for apply BNF
     Statement();
     cout << "Debug next token "<< token->value << endl;
-    token = nextToken();
     if (token->sym != symRCURLY){
       Error(31);
       if(token->sym == symEOF){
