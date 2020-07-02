@@ -68,13 +68,12 @@ char *procobjToString()
   return str;
 }
 
-struct idobjTag *newIdobj(char name[], int sym, int attr,
-                             int level, char procname[])
+struct idobjTag *newIdobj(char name[], int sym,int level, char procname[])
 {
   struct idobjTag *p=(struct idobjTag *)malloc(sizeof(struct idobjTag));
   strcpy(p->name, name);
   p->sym = sym;
-  p->attr = attr;
+  // p->attr = attr;
   p->level = level;
   strcpy(p->procname, procname);
   p->next = NULL;

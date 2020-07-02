@@ -3,7 +3,7 @@ struct idobjTag
 {
   char name[36];
   int sym;
-  int attr;
+  // int attr;
   int level;
   char procname[36];
   struct idobjTag *next;
@@ -12,9 +12,8 @@ struct idobjTag
 char * idobjToString(struct idobjTag *p)
 {
   static char str[512];
-  sprintf(str,"  name:\"%s\"\tsym:%d\tattr:%d"
+  sprintf(str,"  name:\"%s\"\tsym:%d\t"
     "\tlevel:%d\tprocname:\"%s\"",
-    p->name, p->sym, p->attr,
-    p->level, p->procname);
+    p->name, p->sym,p->level, p->procname);
   return str;
 }

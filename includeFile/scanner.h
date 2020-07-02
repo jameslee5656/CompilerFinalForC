@@ -214,13 +214,13 @@ struct symbolTag *nextToken()
         advance();          
         break;
       case ' ':
-        cout << "Debug Space Char" << endl;
+        // cout << "Debug Space Char" << endl;
         advance();          
         break;
       case '\t':
       case '\r':
       case '\n':
-        cout << "Debug Next Char" << endl;
+        // cout << "Debug Next Char" << endl;
         advance();          
         break;
       case -1:

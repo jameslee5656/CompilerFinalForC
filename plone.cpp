@@ -13,6 +13,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
+#include <thread>
+#include <chrono>
+#include <vector>
 using namespace std;
 /*
 ** Constant
@@ -109,6 +112,7 @@ void Program();
 ** Global Constant
 */
 struct symbolTag *token;
+vector<symbolTag *> tokenVec;
 int errorCount = 0;
 struct idobjTag *idobj;
 char outname[IDLEN];
@@ -235,16 +239,24 @@ void Error(int n)
 /*
 ** Language Rule#3 <function-definition>
 */
-  void function_definition(){
-    while((token->sym > symSCSBEGIN )and(token->sym < symTSEND)){
-      cout << "Debug function_definition"  << endl;
+  void function_definition(){ 
+    tokenVec.push_back(token);
+    // cout << "Debug " << tokenVec.front()->value << endl;
+    while((tokenVec.back()->sym > symSCSBEGIN )and(tokenVec.back()->sym < symTSEND)){
+      cout << "Debug function_definition1"  << endl;
       declaration_specifier();
+      token = nextToken();
+      tokenVec.push_back(token);
+      // cout << "Debug Vec front " << tokenVec.front()->value << endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
     declarator();
     // Need more modify {<declaration>}* ?? only symSCSBEGIN ~ symTSEND ??
     while(((token->sym > symSCSBEGIN )and(token->sym < symTSEND)) or(token->sym == symLPAREN)){
-      cout << "Debug function_definition "  << endl;
+      cout << "Debug function_definition2"  << endl;
       declaration();
+      // token = nextToken();
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
     compound_statement();
   }
@@ -266,24 +278,24 @@ void Error(int n)
 /*
 ** Language Rule#4 <declaration-specifier>
 */
-  void declaration_specifier()
+void declaration_specifier()
+{
+  cout << "Debug declaration_specifier" << endl;
+  // cout << symTSBEGIN << endl;
+  // cout << symTSEND << endl;
+  // cout << token->sym << endl;
+  // cout << token->value << endl;
+  if ((token->sym > symSCSBEGIN) && (token->sym < symSCSEND))
   {
-    cout << "Debug declaration_specifier" << endl;
-    // cout << symTSBEGIN << endl;
-    // cout << symTSEND << endl;
-    // cout << token->sym << endl;
-    // cout << token->value << endl;
-    if ((token->sym > symSCSBEGIN) && (token->sym < symSCSEND))
-    {
-      storage_class_specifier();
-    }
-    else if ((token->sym > symTQBEGIN) && (token->sym < symTQEND)){
-      type_qualifier();
-    }
-    else if ((token->sym > symTSBEGIN) && (token->sym < symTSEND)){
-      type_specifier();
-    }
+    storage_class_specifier();
   }
+  else if ((token->sym > symTQBEGIN) && (token->sym < symTQEND)){
+    type_qualifier();
+  }
+  else if ((token->sym > symTSBEGIN) && (token->sym < symTSEND)){
+    type_specifier();
+  }
+}
   void ConstDeclaration()
   {
     if (strcmp(token->value, "CONST")==0)
@@ -292,7 +304,7 @@ void Error(int n)
       if (token->sym == symIDENTIFIER)
       {
         varlistadd(procStack[procTop-1], 
-          newIdobj(token->value, token->sym, symCONST, 
+          newIdobj(token->value, token->sym, 
           level, procStack[procTop-1]->name));
         strcpy(id, procStack[procTop-1]->name);
         strcat(id, "_");
@@ -313,7 +325,7 @@ void Error(int n)
           if (token->sym == symIDENTIFIER)
           {
             varlistadd(procStack[procTop-1], 
-              newIdobj(token->value, token->sym, symCONST, 
+              newIdobj(token->value, token->sym, 
               level, procStack[procTop-1]->name));
             sprintf(buf, "%s_%s\tDB\t",
               procStack[procTop-1]->name, token->value);
@@ -363,7 +375,7 @@ void Error(int n)
         if ((token->sym == symAUTO )||(token->sym == symREGISTER)||
         (token->sym == symSTATIC)|| (token->sym == symEXTERN)||
         (token->sym == symTYPEDEF)){
-          token = nextToken();
+          // token = nextToken();
         }
         else
         {
@@ -381,8 +393,7 @@ void Error(int n)
       token = nextToken();
       if (token->sym == symIDENTIFIER)
       {
-        idobj=newIdobj(token->value,token->sym,
-          symVAR, level, procStack[procTop-1]->name);
+        idobj=newIdobj(token->value,token->sym, level, procStack[procTop-1]->name);
         varlistadd(procobjTop, idobj);
         sprintf(buf, "%s_%s\tDW\t0\n",
           procStack[procTop-1]->name, token->value);
@@ -394,7 +405,7 @@ void Error(int n)
         token = nextToken();
         if (token->sym == symIDENTIFIER)
         {
-          idobj=newIdobj(token->value,token->sym,symVAR,
+          idobj=newIdobj(token->value,token->sym,
                          level, procStack[procTop-1]->name);
           varlistadd(procobjTop, idobj);
           sprintf(buf, "%s_%s\tDW\t0\n",
@@ -423,23 +434,25 @@ void Error(int n)
 /*
 ** Language Rule#6 <type-specifier>
 */
-  void type_specifier()
-  {
-    if (isResword(token->value) != -1){
-        if ((token->sym > symTSBEGIN) && (token->sym < symTSEND)){
-          token = nextToken();
-        }
-        // if else(){} For struct-or-union-specifier
-        // if else(){} For enum-specifier
-        // if else(){} For typedef-name
-        else
-        {
-          Error(27);
-        }
-    }
-    else
-      skip(statement, 26);
+void type_specifier()
+{
+  cout << "Debug Into Type Specifier" << endl;
+  if (isResword(token->value) != -1){      
+      if ((token->sym > symTSBEGIN) && (token->sym < symTSEND)){
+        // token = nextToken();
+        return;
+      }
+      // if else(){} For struct-or-union-specifier
+      // if else(){} For enum-specifier
+      // if else(){} For typedef-name
+      else
+      {
+        Error(27);
+      }
   }
+  else
+    skip(statement, 26);
+}
   void ProcDeclaration()
   {
     int tail;
@@ -457,8 +470,7 @@ void Error(int n)
         p->tail = NULL;
         varlistadd(
           procStack[procTop-1],
-          newIdobj(procname, token->sym, symPROCEDURE,
-          level, procStack[procTop-1]->name));
+          newIdobj(procname, token->sym,level, procStack[procTop-1]->name));
         procpush(p);
         procStack[procTop++] = p;
         tail = ++labelCount;
@@ -650,13 +662,13 @@ void Error(int n)
 /*
 ** Language Rule#13 <declarator>
 */
-  void declarator(){
-    cout << "Debug Into Declarator" << endl;
-    if (token->sym == symMUL){
-      pointer();
-    }
-    direct_declarator();
+void declarator(){
+  cout << "Debug Into Declarator" << endl;
+  if (tokenVec.back()->sym == symMUL){
+    pointer();
   }
+  direct_declarator();
+}
   void ReadStatement()
   {
     if (strcmp(token->value,"READ")==0)
@@ -743,20 +755,20 @@ void Error(int n)
           {
             sprintf(id, "%s_%s",
                         idobj->procname, token->value);
-            if (idobj->attr == symCONST)
-            {
-              sprintf(buf,"\tdispstr\t%s\n", id);
-              fprintf(outfile,"%s", buf);
-            }
-            else
-            {
+            // if (idobj->attr == symCONST)
+            // {
+            //   sprintf(buf,"\tdispstr\t%s\n", id);
+            //   fprintf(outfile,"%s", buf);
+            // }
+            // else
+            // {
               sprintf(buf, "\titostr\t%s, _intstr, '$'\n"
                 "\tMOV\tDX, _intstr\n"
                 "\tMOV\tAH, 09H\n"
                 "\tINT\t21H\n"
                 "\tnewline\n", id);
               fprintf(outfile,"%s", buf);
-            }
+            // }
           }
           Identifier();
         }
@@ -771,20 +783,20 @@ void Error(int n)
             {
               sprintf(id, "%s_%s",
                           idobj->procname, token->value);
-              if (idobj->attr == symCONST)
-              {
-                sprintf(buf,"\tdispstr\t%s\n", id);
-                fprintf(outfile,"%s", buf);
-              }
-              else
-              {
+              // if (idobj->attr == symCONST)
+              // {
+              //   sprintf(buf,"\tdispstr\t%s\n", id);
+              //   fprintf(outfile,"%s", buf);
+              // }
+              // else
+              // {
                 sprintf(buf, "\titostr\t%s, _intstr, '$'\n"
                   "\tMOV\tDX, _intstr\n"
                   "\tMOV\tAH, 09H\n"
                   "\tINT\t21H\n"
                   "\tnewline\n", id);
                 fprintf(outfile,"%s", buf);
-              }
+              // }
             }
             Identifier();
           }
@@ -840,8 +852,8 @@ void Error(int n)
   void direct_declarator(){
     cout << "Debug Into direct-declarator" << endl;
     // struct procobjTag *p;
-    cout << "Debug " << token->sym << endl;
-    cout << "Debug " << token->value << endl;
+    cout << "***Debug " << tokenVec.back()->sym << endl;
+    cout << "***Debug " << tokenVec.back()->value << endl;
     if ((token->sym == symIDENTIFIER) && (FirstFunction == true))
     {
       strcpy(funcName, token->value);
@@ -878,17 +890,35 @@ void Error(int n)
       token = nextToken();
       // The flag that use for Detemine if it is first in function 
       FirstFunction = false;
-        // if (token->sym == symSEMI) token = nextToken();
         // else Error(3);
     }
+    // This part is for int main(arvg[] ... ).
     else if(token->sym == symLPAREN){
       cout << "Debug Into (<declarator>)" << endl;
-      token = nextToken();
+      // token = nextToken();
       cout << "Debug next token: " << token->value << endl;
       // ?? Not sure how to do this part -> need to ignore the null
       // declarator();
     }
-    else Error(2);
+    // Others that need to store variable into queue
+    else if((tokenVec.back()->sym == symIDENTIFIER ) || 
+            ((tokenVec.back()->sym > symSCSBEGIN) && (token->sym < symTSEND))){
+      token = nextToken();
+      cout << "Debug Store variable " << token->value << endl;
+      varlistadd(procStack[procTop-1], 
+          newIdobj(token->value, token->sym, level, procStack[procTop-1]->name));
+      sprintf(buf, "%s_%s\tDW\t0\n",
+          procStack[procTop-1]->name, token->value);
+      fprintf(outfile,"%s",buf);
+      
+    }
+    else if (token->sym == symSEMI) token = nextToken();
+    else {
+      cout << "Debug Error 2 " << token->value << endl;
+      cout << "Debug Ignoring Error 2 for direct declarator" << endl;
+      // token = nextToken();
+      // Error(2);
+    }
         // else
     //   Error(1);
     //  Identifier();
@@ -1046,11 +1076,14 @@ void Error(int n)
 //<declaration> ::=  {<declaration-specifier>}+ {<init-declarator>}* ;
 void declaration(){
   cout << "Debug Into #48 Declaration" << endl;
-  cout << token->value << endl;
-  if ((token->sym > symSCSBEGIN )and(token->sym < symTSEND)){
-    do {
+  cout << "Debug TokenVector back " << tokenVec.back()->value << endl;
+  if ((tokenVec.back()->sym > symSCSBEGIN )and(tokenVec.back()->sym < symTSEND)){
+    while((tokenVec.back()->sym > symSCSBEGIN )and(tokenVec.back()->sym < symTSEND)){
       declaration_specifier();
-    }while((token->sym > symSCSBEGIN )and(token->sym < symTSEND));
+      tokenVec.push_back(token);
+      token = nextToken();
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    };
   }
   else{
     cout << token->value << endl;
@@ -1066,7 +1099,9 @@ void declaration(){
 */
 void init_declarator(){
   cout << "Debug Into init_declarator" << endl;
-  if (nextToken()->sym == symEQ){
+  token = nextToken();
+  // token = nextToken();
+  if (tokenVec.back()->sym == symEQ){
     cout << "Debug token "<< token->value << endl;
     declarator();
     cout << "Debug token "<< token->value << endl;
@@ -1083,8 +1118,10 @@ void initializer(){
 // Language Rule#52
 void compound_statement(){
   cout << "Debug Into #52 Compound Statement" << endl;
-  if (token->sym == symLCURLY){
-    token = nextToken();
+  tokenVec.push_back(token);
+  token = nextToken();
+  cout << "Debug token Vec " << tokenVec.back()->value << endl;
+  if (tokenVec.back()->sym == symLCURLY){
     cout << "Debug After LCURLY " << token->value << endl;
     while((token->sym > symSCSBEGIN )and(token->sym < symTSEND)){
       declaration();
@@ -1131,6 +1168,9 @@ void Statement()
   //   AssignmentStatement();
   // else
   //   skip(statement, 23);
+  if (token->sym ==symSEMI){
+    token = nextToken();
+  }
 }
 // Language Rule#54
 /*
