@@ -1,3 +1,3 @@
 int main(){
-  int variablest;
+  int vk;
 }

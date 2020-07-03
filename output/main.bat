@@ -1,2 +1,2 @@
-nasm -f macho64 /Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/output/main.asm -o /Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/outputmain.com && ld -no_pie -e _main -macosx_version_min 10.13 -arch x86_64 /Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/outputmain.com -lSystem
+nasm -f macho64 /Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/output/main.asm -o /Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/output/main.com && ld -no_pie -e _main -macosx_version_min 10.13 -arch x86_64 /Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/output/main.com -lSystem
 /Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/a.out

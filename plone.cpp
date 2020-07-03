@@ -260,21 +260,21 @@ void Error(int n)
     }
     compound_statement();
   }
-  void Block()
-  {
-    ++level;
-    if (strcmp(token->value, "CONST")==0)
-      ConstDeclaration();
-    if (strcmp(token->value, "VAR")==0)
-      VarDeclaration();
-    sprintf(buf, "_start%d:\n", labelCount);
-    fprintf(outfile,"%s", buf);
-    if (strcmp(token->value, "PROCEDURE")==0)
-      ProcDeclaration();
-    strcpy(procname, procStack[procTop-1]->name);
-    CompoundStatement();
-    --level;
-  }
+void Block()
+{
+  ++level;
+  if (strcmp(token->value, "CONST")==0)
+    ConstDeclaration();
+  if (strcmp(token->value, "VAR")==0)
+    VarDeclaration();
+  sprintf(buf, "_start%d:\n", labelCount);
+  fprintf(outfile,"%s", buf);
+  if (strcmp(token->value, "PROCEDURE")==0)
+    ProcDeclaration();
+  strcpy(procname, procStack[procTop-1]->name);
+  CompoundStatement();
+  --level;
+}
 /*
 ** Language Rule#4 <declaration-specifier>
 */
@@ -368,69 +368,69 @@ void declaration_specifier()
 /*
 ** Language Rule#5 <storage-class-specifier>
 */
- void storage_class_specifier()
- {
-    cout << "Debug Into Storage Class Specifier" << endl;
-    if (isResword(token->value) != -1){
-        if ((token->sym == symAUTO )||(token->sym == symREGISTER)||
-        (token->sym == symSTATIC)|| (token->sym == symEXTERN)||
-        (token->sym == symTYPEDEF)){
-          // token = nextToken();
-        }
-        else
-        {
-          Error(27);
-        }
-    }
-    else
-      skip(statement, 22);
+void storage_class_specifier()
+{
+  cout << "Debug Into Storage Class Specifier" << endl;
+  if (isResword(token->value) != -1){
+      if ((token->sym == symAUTO )||(token->sym == symREGISTER)||
+      (token->sym == symSTATIC)|| (token->sym == symEXTERN)||
+      (token->sym == symTYPEDEF)){
+        tokenVec.push_back(token);
+        token = nextToken();
+      }
+      else
+      {
+        Error(27);
+      }
+  }
+  else
+    skip(statement, 22);
 
- }
-  void VarDeclaration()
+}
+void VarDeclaration()
+{
+  if (strcmp(token->value, "VAR")==0)
   {
-    if (strcmp(token->value, "VAR")==0)
+    token = nextToken();
+    if (token->sym == symIDENTIFIER)
+    {
+      idobj=newIdobj(token->value,token->sym, level, procStack[procTop-1]->name);
+      varlistadd(procobjTop, idobj);
+      sprintf(buf, "\tDW%s_%s\n",procStack[procTop-1]->name, token->value);
+      fprintf(outfile,"%s", buf);
+      token = nextToken();
+    }
+    while (token->sym == symCOMMA)
     {
       token = nextToken();
       if (token->sym == symIDENTIFIER)
       {
-        idobj=newIdobj(token->value,token->sym, level, procStack[procTop-1]->name);
+        idobj=newIdobj(token->value,token->sym,
+                        level, procStack[procTop-1]->name);
         varlistadd(procobjTop, idobj);
         sprintf(buf, "%s_%s\tDW\t0\n",
           procStack[procTop-1]->name, token->value);
         fprintf(outfile,"%s", buf);
         token = nextToken();
       }
-      while (token->sym == symCOMMA)
-      {
-        token = nextToken();
-        if (token->sym == symIDENTIFIER)
-        {
-          idobj=newIdobj(token->value,token->sym,
-                         level, procStack[procTop-1]->name);
-          varlistadd(procobjTop, idobj);
-          sprintf(buf, "%s_%s\tDW\t0\n",
-            procStack[procTop-1]->name, token->value);
-          fprintf(outfile,"%s", buf);
-          token = nextToken();
-        }
-      }
-      if (token->sym == symSEMI)
-      {
-        token = nextToken();
-      }
-      else
-      {
-        Error(6);
-        skip(statement, 23);
-        if (token->sym == symSEMI)
-          token = nextToken();
-      }
+    }
+    if (token->sym == symSEMI)
+    {
+      token = nextToken();
     }
     else
     {
-      Error(7);
+      Error(6);
+      skip(statement, 23);
+      if (token->sym == symSEMI)
+        token = nextToken();
     }
   }
+  else
+  {
+    Error(7);
+  }
+}
 /*
 ** Language Rule#6 <type-specifier>
 */
@@ -561,31 +561,32 @@ void type_specifier()
 /*
 ** Language Rule#10 <CompoundStatement>
 */
-  void CompoundStatement()
+void CompoundStatement()
+{
+  if (strcmp(token->value,"BEGIN")==0)
   {
-    if (strcmp(token->value,"BEGIN")==0)
+    tokenVec.push_back(token);
+    token = nextToken();
+    Statement();
+    while (token->sym == symSEMI)
     {
       token = nextToken();
       Statement();
-      while (token->sym == symSEMI)
-      {
-        token = nextToken();
-        Statement();
-      }
-      if (strcmp(token->value,"END")==0)
-        token = nextToken();
-      else
-      {
-        Error(11);
-        skip(statement, 23);
-      }
     }
+    if (strcmp(token->value,"END")==0)
+      token = nextToken();
     else
     {
-      Error(10);
+      Error(11);
       skip(statement, 23);
     }
   }
+  else
+  {
+    Error(10);
+    skip(statement, 23);
+  }
+}
 /*
 ** Language Rule#11 <IfStatement>
 */
@@ -849,81 +850,81 @@ void declarator(){
 /*
 ** Language Rule#16 <direct-declarator>
 */
-  void direct_declarator(){
-    cout << "Debug Into direct-declarator" << endl;
-    // struct procobjTag *p;
-    cout << "***Debug " << tokenVec.back()->sym << endl;
-    cout << "***Debug " << tokenVec.back()->value << endl;
-    if ((token->sym == symIDENTIFIER) && (FirstFunction == true))
-    {
-      strcpy(funcName, token->value);
-      cout << "Debug funcName " << funcName << endl; 
-      struct procobjTag *p;
-      p = newProcobj(procname);
-      p->next = NULL;
-      p->head = NULL;
-      p->tail = NULL;
-      procpush(p);
-      procStack[procTop++] = p;
-      strcpy(progname, token->value);
-      strcpy(outname, "output/");
-      strcat(outname, token->value);
-      strcat(outname, ".asm");
-      outfile = fopen(outname, "w");
-      ++labelCount;
-      sprintf(buf,
-        ";************** %s ****************\n"
-        ";\n"
-        "\tglobal _main\n"
-        "_intstr\tDB\t'     ','$'\n"
-        "_buf\tTIMES 256 DB ' '\n"
-        "\tDB 13,10,'$'\n",
-         outname);
-      fprintf(outfile,"%s", buf);
-      strcpy(buf, "%include\t\"dispstr.mac\"\n");
-      strcat(buf, "%include\t\"itostr.mac\"\n");
-      strcat(buf, "%include\t\"readstr.mac\"\n");
-      strcat(buf, "%include\t\"strtoi.mac\"\n");
-      strcat(buf, "%include\t\"newline.mac\"\n");
-      snprintf(buf, 10, "_main:\n");
-      fputs(buf, outfile);
-      token = nextToken();
-      // The flag that use for Detemine if it is first in function 
-      FirstFunction = false;
-        // else Error(3);
-    }
-    // This part is for int main(arvg[] ... ).
-    else if(token->sym == symLPAREN){
-      cout << "Debug Into (<declarator>)" << endl;
-      // token = nextToken();
-      cout << "Debug next token: " << token->value << endl;
-      // ?? Not sure how to do this part -> need to ignore the null
-      // declarator();
-    }
-    // Others that need to store variable into queue
-    else if((tokenVec.back()->sym == symIDENTIFIER ) || 
-            ((tokenVec.back()->sym > symSCSBEGIN) && (token->sym < symTSEND))){
-      token = nextToken();
-      cout << "Debug Store variable " << token->value << endl;
-      varlistadd(procStack[procTop-1], 
-          newIdobj(token->value, token->sym, level, procStack[procTop-1]->name));
-      sprintf(buf, "%s_%s\tDW\t0\n",
-          procStack[procTop-1]->name, token->value);
-      fprintf(outfile,"%s",buf);
-      
-    }
-    else if (token->sym == symSEMI) token = nextToken();
-    else {
-      cout << "Debug Error 2 " << token->value << endl;
-      cout << "Debug Ignoring Error 2 for direct declarator" << endl;
-      // token = nextToken();
-      // Error(2);
-    }
-        // else
-    //   Error(1);
-    //  Identifier();
+void direct_declarator(){
+  cout << "Debug Into direct-declarator" << endl;
+  // struct procobjTag *p;
+  cout << "***Debug " << tokenVec.back()->sym << endl;
+  cout << "***Debug " << tokenVec.back()->value << endl;
+  if ((token->sym == symIDENTIFIER) && (FirstFunction == true))
+  {
+    strcpy(funcName, token->value);
+    cout << "Debug funcName " << funcName << endl; 
+    struct procobjTag *p;
+    p = newProcobj(procname);
+    p->next = NULL;
+    p->head = NULL;
+    p->tail = NULL;
+    procpush(p);
+    procStack[procTop++] = p;
+    strcpy(progname, token->value);
+    strcpy(outname, "output/");
+    strcat(outname, token->value);
+    strcat(outname, ".asm");
+    outfile = fopen(outname, "w");
+    ++labelCount;
+    sprintf(buf,
+      ";************** %s ****************\n"
+      ";\n"
+      "\tglobal _main\n"
+      "_intstr\tDB\t'     ','$'\n"
+      "_buf\tTIMES 256 DB ' '\n"
+      "\tDB 13,10,'$'\n",
+        outname);
+    fprintf(outfile,"%s", buf);
+    strcpy(buf, "%include\t\"dispstr.mac\"\n");
+    strcat(buf, "%include\t\"itostr.mac\"\n");
+    strcat(buf, "%include\t\"readstr.mac\"\n");
+    strcat(buf, "%include\t\"strtoi.mac\"\n");
+    strcat(buf, "%include\t\"newline.mac\"\n");
+    snprintf(buf, 10, "_main:\n");
+    fputs(buf, outfile);
+    token = nextToken();
+    // The flag that use for Detemine if it is first in function 
+    FirstFunction = false;
+      // else Error(3);
+  }
+  // This part is for int main(arvg[] ... ).
+  else if(token->sym == symLPAREN){
+    cout << "Debug Into (<declarator>)" << endl;
+    // token = nextToken();
+    cout << "Debug next token: " << token->value << endl;
+    // ?? Not sure how to do this part -> need to ignore the null
+    // declarator();
+  }
+  // Others that need to store variable into queue
+  else if((tokenVec.back()->sym == symIDENTIFIER ) || 
+          ((tokenVec.back()->sym > symSCSBEGIN) && (token->sym < symTSEND))){
+    tokenVec.push_back(token);
+    token = nextToken();
+    cout << "Debug Store variable " << tokenVec.back()->value << endl;
+    varlistadd(procStack[procTop-1], 
+        newIdobj(tokenVec.back()->value, tokenVec.back()->sym, level, procStack[procTop-1]->name));
+    sprintf(buf, "\t%s:\tDW\t\"46\"\n", tokenVec.back()->value);
+    fprintf(outfile,"%s",buf);
+    
+  }
+  else if (token->sym == symSEMI) token = nextToken();
+  else {
+    cout << "Debug Error 2 " << token->value << endl;
+    cout << "Debug Ignoring Error 2 for direct declarator" << endl;
+    // token = nextToken();
+    // Error(2);
+  }
+      // else
+  //   Error(1);
+  //  Identifier();
 
-  } 
+} 
   void Condition()
   {
     Expression();
@@ -1099,12 +1100,14 @@ void declaration(){
 */
 void init_declarator(){
   cout << "Debug Into init_declarator" << endl;
+  tokenVec.push_back(token);
   token = nextToken();
   // token = nextToken();
   if (tokenVec.back()->sym == symEQ){
     cout << "Debug token "<< token->value << endl;
     declarator();
     cout << "Debug token "<< token->value << endl;
+    tokenVec.push_back(token);
     token = nextToken();
     cout << "Debug token "<< token->value << endl;
     initializer();
@@ -1121,14 +1124,16 @@ void compound_statement(){
   tokenVec.push_back(token);
   token = nextToken();
   cout << "Debug token Vec " << tokenVec.back()->value << endl;
-  if (tokenVec.back()->sym == symLCURLY){
+  if (token->sym == symLCURLY){
     cout << "Debug After LCURLY " << token->value << endl;
+    tokenVec.push_back(token);
+    token = nextToken();
     while((token->sym > symSCSBEGIN )and(token->sym < symTSEND)){
       declaration();
     }
     // Need more Adjust for apply BNF
     Statement();
-    cout << "Debug next token "<< token->value << endl;
+    // cout << "Debug next token "<< token->value << endl;
     if (token->sym != symRCURLY){
       Error(31);
       if(token->sym == symEOF){
@@ -1168,7 +1173,10 @@ void Statement()
   //   AssignmentStatement();
   // else
   //   skip(statement, 23);
+  cout << "Debug Into Rule#53 Statement" << endl;
+  cout << token->value << endl;
   if (token->sym ==symSEMI){
+    tokenVec.push_back(token);
     token = nextToken();
   }
 }
@@ -1180,6 +1188,7 @@ void Statement()
 */
 void labeled_statement(){
   Identifier();
+  tokenVec.push_back(token);
   token = nextToken();
 
 }
@@ -1197,9 +1206,16 @@ void DEBUG_PRINT(char* DEBUG_STRING){
     "\txor       rdi, rdi                ; exit code 0\n"
     "\tsyscall                           ; invoke operating system to exit\n"
     "\tsection   .data\n"
-    "\tmessage:  db\t\"%s\", 30      ; note the newline at the end\n"
+    "\tmessage:  db\t\"%s\"              ; note the newline at the end\n"
+    ";*****************************************************\n"
+    // "\tmov       rax, 0x02000004\n"
+    // "\tmov       rdi, 1\n"
+    // "\tmov       rsi, _int\n"
+    // "\tmov       rdx, 13"
+    // "syscall"
     ,DEBUG_STRING);
     fprintf(outfile,"%s", buf);
+    
 }
 
 /*
@@ -1214,7 +1230,7 @@ void DEBUG_PRINT(char* DEBUG_STRING){
         Error(26);
         cout << " This is the place is wrong" << endl;
       }
-        
+      tokenVec.push_back(token);
       token = nextToken();
     }
     else
@@ -1223,13 +1239,15 @@ void DEBUG_PRINT(char* DEBUG_STRING){
 /*
 ** Number Process
 */
-  void Number()
-  {
-    if (token->sym == symNUMBER)
-      token = nextToken();
-    else
-      Error(22);
+void Number()
+{
+  if (token->sym == symNUMBER){
+    tokenVec.push_back(token);
+    token = nextToken();
   }
+  else
+    Error(22);
+}
 /*
 ************************** Main Function **********************
 */
@@ -1243,7 +1261,7 @@ void DEBUG_PRINT(char* DEBUG_STRING){
     // Test the codes
     // return
     char debugString[IDLEN];
-    snprintf(debugString, 30, "Hello to NASM World");
+    snprintf(debugString, 30, "hello");
     DEBUG_PRINT(debugString);
     // fprintf(outfile, "\tMOV\tAX, 4C00H\n"
     //              "\tINT\t21H\n");
@@ -1264,9 +1282,9 @@ void DEBUG_PRINT(char* DEBUG_STRING){
       char commandLine[BUFSIZE];
       // sprintf(commandLine, "chmod 766 /Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/output/%s.asm", progname);
       sprintf(commandLine,"nasm -f macho64 /Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/output/%s.asm "
-      "-o /Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/output%s.com "
+      "-o /Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/output/%s.com "
       "&& ld -no_pie -e _main -macosx_version_min 10.13 -arch x86_64 "
-      "/Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/output%s.com -lSystem\n",progname,progname,progname);
+      "/Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/output/%s.com -lSystem\n",progname,progname,progname);
       cout << commandLine << endl;
       fprintf(batchfile, "%s", commandLine);
       fprintf(batchfile, "/Users/jameslee/Desktop/Spring2020/Compiler/Compiler_codes/codingFINAL/a.out\n");

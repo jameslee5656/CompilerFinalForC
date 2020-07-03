@@ -5,8 +5,7 @@ _intstr	DB	'     ','$'
 _buf	TIMES 256 DB ' '
 	DB 13,10,'$'
 _main:
-_{	DW	0
-_;	DW	0
+	vk:	DW	"46"
 	mov       rax, 0x02000004         ; system call for write
 	mov       rdi, 1                  ; file handle 1 is stdout
 	mov       rsi, message            ; address of string to output
@@ -16,4 +15,5 @@ _;	DW	0
 	xor       rdi, rdi                ; exit code 0
 	syscall                           ; invoke operating system to exit
 	section   .data
-	message:  db	"Hello to NASM World", 30      ; note the newline at the end
+	message:  db	"hello"              ; note the newline at the end
+;*****************************************************
