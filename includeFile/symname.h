@@ -26,10 +26,10 @@ void symnameinit()
   strcpy(names[symBECOMES],"BECOMES");
   strcpy(names[symBEGIN],"BEGIN");
   strcpy(names[symEND],"END");
-  strcpy(names[symIF],"IF");
+  strcpy(names[symIF],"if");
   strcpy(names[symTHEN],"THEN");
-  strcpy(names[symWHILE],"WHILE");
-  strcpy(names[symDO],"DO");
+  strcpy(names[symWHILE],"while");
+  strcpy(names[symDO],"do");
   strcpy(names[symREAD],"READ");
   strcpy(names[symWRITE],"WRITE");
   strcpy(names[symIDENTIFIERLIST],"IDENTIFIERLIST");
@@ -54,4 +54,11 @@ void symnameinit()
   strcpy(names[symDOUBLE], "double");
   strcpy(names[symSIGNED], "signed");
   strcpy(names[symUNSIGNED], "unsigned");
+  strcpy(names[symCOLON], "COLON");
+  strcpy(names[symSWITCH], "switch");
+  strcpy(names[symFOR],"for");
+  strcpy(names[symBREAK],"break");
+  strcpy(names[symGOTO], "goto");
+  strcpy(names[symCONTINUE], "continue");
+  strcpy(names[symRETURN], "return");
 }

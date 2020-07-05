@@ -9,6 +9,8 @@ char reswords[RESWORDMAX][20] =
     "void", "char", "short", "int", "long", "float", "double", "signed", "unsigned",
     // struct-or-union
     "struct", "union", 
+    // statement
+    "switch", "for", "goto", "continue", "return",
     // Plone Reserve Word
   "BEGIN","CALL","CONST","DO","END","IF","PROCEDURE",
   "PROGRAM","READ","THEN","VAR","WHILE","WRITE",""

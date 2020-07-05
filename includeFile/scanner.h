@@ -198,7 +198,7 @@ struct symbolTag *nextToken()
         }
         else
         {
-          return newSymbol(symerror,linenum,cp, s);
+          return newSymbol(symCOLON,linenum,cp, s);
         }
       case '"':
         advance();

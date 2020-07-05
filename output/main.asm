@@ -5,7 +5,7 @@ _intstr	DB	'     ','$'
 _buf	TIMES 256 DB ' '
 	DB 13,10,'$'
 _main:
-	vk:	DW	"46"
+	vk_const:	DW	12
 	mov       rax, 0x02000004         ; system call for write
 	mov       rdi, 1                  ; file handle 1 is stdout
 	mov       rsi, message            ; address of string to output

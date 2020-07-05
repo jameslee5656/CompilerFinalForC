@@ -1,3 +1,3 @@
 int main(){
-  int vk;
+  int vk = 12;
 }

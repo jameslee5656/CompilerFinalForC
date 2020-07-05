@@ -853,8 +853,8 @@ void declarator(){
 void direct_declarator(){
   cout << "Debug Into direct-declarator" << endl;
   // struct procobjTag *p;
-  cout << "***Debug " << tokenVec.back()->sym << endl;
-  cout << "***Debug " << tokenVec.back()->value << endl;
+  cout << "Debug " << tokenVec.back()->sym << endl;
+  cout << "Debug " << tokenVec.back()->value << endl;
   if ((token->sym == symIDENTIFIER) && (FirstFunction == true))
   {
     strcpy(funcName, token->value);
@@ -902,22 +902,33 @@ void direct_declarator(){
     // declarator();
   }
   // Others that need to store variable into queue
-  else if((tokenVec.back()->sym == symIDENTIFIER ) || 
-          ((tokenVec.back()->sym > symSCSBEGIN) && (token->sym < symTSEND))){
+  else if(((tokenVec.back()->sym == symIDENTIFIER ) || 
+          ((tokenVec.back()->sym > symSCSBEGIN) && (token->sym < symTSEND)))
+          && (token->sym == symEQ)){
     tokenVec.push_back(token);
     token = nextToken();
     cout << "Debug Store variable " << tokenVec.back()->value << endl;
-    varlistadd(procStack[procTop-1], 
+    varlistadd(procStack[procTop-1],
         newIdobj(tokenVec.back()->value, tokenVec.back()->sym, level, procStack[procTop-1]->name));
-    sprintf(buf, "\t%s:\tDW\t\"46\"\n", tokenVec.back()->value);
+    // sprintf(buf, "\t%s:\tDW\t10\n", tokenVec.back()->value);
+    // fprintf(outfile,"%s",buf);
+  }
+  else if (((tokenVec.back()->sym == symIDENTIFIER ) || ((tokenVec.back()->sym > symSCSBEGIN) && (token->sym < symTSEND)) 
+  )&& (token->sym != symEQ)){
+    cout << "Debug Store variable " << tokenVec.back()->value << endl;
+    varlistadd(procStack[procTop-1],
+        newIdobj(tokenVec.back()->value, tokenVec.back()->sym, level, procStack[procTop-1]->name));
+    sprintf(buf, "\t%s_init:\tDW\t0\n", tokenVec.back()->value);
     fprintf(outfile,"%s",buf);
-    
+    tokenVec.push_back(token);
+    token = nextToken();
   }
   else if (token->sym == symSEMI) token = nextToken();
   else {
     cout << "Debug Error 2 " << token->value << endl;
     cout << "Debug Ignoring Error 2 for direct declarator" << endl;
     // token = nextToken();
+    // token
     // Error(2);
   }
       // else
@@ -986,13 +997,13 @@ void direct_declarator(){
     {
       token = nextToken();
     }
-    Term();
+    // Term();
     while (token->sym == symPLUS ||
            token->sym == symMINUS)
     {
       int operatorDeclare = token->sym;
       token = nextToken();
-      Term();
+      // Term();
       if (operatorDeclare == symPLUS)
       {
         fprintf(outfile,"\tPOP\tBX\n"
@@ -1010,69 +1021,132 @@ void direct_declarator(){
     }
   }
 /*
-** Language Rule#18 <Term>
+Language Rule#18
+<conditional-expression> ::= <logical-or-expression>
+                           | <logical-or-expression> ? <expression> : <conditional-expression>
 */
-  void Term()
-  {
-    Factor();
-    while (token->sym == symMUL ||
-           token->sym == symDIV)
-    {
-      int operatorDeclare = token->sym;
-      token = nextToken();
-      Factor();
-      if (operatorDeclare == symMUL)
-      {
-        fprintf(outfile, "\tPOP\tBX\n"
-                     "\tPOP\tAX\n"
-                     "\tMUL\tBX\n"
-                     "\tPUSH\tAX\n");
-      }
-      else
-      {
-        fprintf(outfile, "\tPOP\tBX\n"
-                     "\tMOV\tDX, 0\n"
-                     "\tPOP\tAX\n"
-                     "\tDIV\tBX\n"
-                     "\tPUSH\tAX\n");
-      }
-    }
-  }
+void conditional_expression(){
+  cout << "Debug Into conditional-expression" << endl;
+  logical_or_expression();
+}
 /*
-** Language Rule#19 <Factor>
+Language Rule#19
+<logical-or-expression> ::= <logical-and-expression>
+                          | <logical-or-expression> || <logical-and-expression>
 */
-  void Factor()
-  {
-    if (token->sym == symIDENTIFIER)
-    {
-      idobj=getIdobj(procStack[procTop-1],token->value);
-      if (idobj != NULL)
-      {
-        sprintf(id, "%s_%s",idobj->procname, token->value);
-        sprintf(buf, "\tPUSH\tWORD [%s]\n", id);
-        fprintf(outfile,"%s", buf);
-      }
-      Identifier();
-    }
-    else if (token->sym == symNUMBER)
-    {
-      sprintf(buf, "\tPUSH\t%s\n", token->value);
-      fprintf(outfile,"%s", buf);
-      Number();
-    }
-    else if (token->sym == symLPAREN)
-    {
-      token = nextToken();
-      Expression();
-      if (token->sym == symRPAREN)
-        token = nextToken();
-      else
-      {
-        Error(18);
-        skip(factor, 23);
-      }
-    }
-  }
+void logical_or_expression(){
+  logical_and_expression();
+}
+/*Language Rule#20
+<logical-and-expression> ::= <inclusive-or-expression>
+                           | <logical-and-expression> && <inclusive-or-expression>*/
+void logical_and_expression(){
+  inclusive_or_expression();
+}
+/*Language Rule#21
+<inclusive-or-expression> ::= <exclusive-or-expression>
+                            | <inclusive-or-expression> | <exclusive-or-expression>*/
+void inclusive_or_expression(){
+  exclusive_or_expression();
+}
+/*Language Rule#22
+<exclusive-or-expression> ::= <and-expression>
+                            | <exclusive-or-expression> ^ <and-expression>*/
+void exclusive_or_expression(){
+  and_expression();
+}
+/*Language Rule#23
+<and-expression> ::= <equality-expression>
+                   | <and-expression> & <equality-expression>*/
+void and_expression(){
+  equality_expression();
+}
+/*Language Rule#24
+<equality-expression> ::= <relational-expression>
+                        | <equality-expression> == <relational-expression>
+                        | <equality-expression> != <relational-expression>*/
+void equality_expression(){
+  relational_expression();
+}
+/*Language Rule#25
+<relational-expression> ::= <shift-expression>
+                          | <relational-expression> < <shift-expression>
+                          | <relational-expression> > <shift-expression>
+                          | <relational-expression> <= <shift-expression>
+                          | <relational-expression> >= <shift-expression>*/
+void relational_expression(){
+  shift_expression();
+}
+/*Language #26
+<shift-expression> ::= <additive-expression>
+                     | <shift-expression> << <additive-expression>
+                     | <shift-expression> >> <additive-expression>*/
+void shift_expression(){
+ additive_expression(); 
+}
+/*Language #27
+<additive-expression> ::= <multiplicative-expression>
+                        | <additive-expression> + <multiplicative-expression>
+                        | <additive-expression> - <multiplicative-expression>*/
+void additive_expression(){
+  multiplicative_expression();
+}
+/*Language #28
+<multiplicative-expression> ::= <cast-expression>
+                              | <multiplicative-expression> * <cast-expression>
+                              | <multiplicative-expression> / <cast-expression>
+                              | <multiplicative-expression> % <cast-expression>*/
+void multiplicative_expression(){
+  cast_expression();
+}
+/*Language #29
+<cast-expression> ::= <unary-expression>
+                    | ( <type-name> ) <cast-expression>*/
+void cast_expression(){
+  unary_expression();
+}
+/*Language #30
+<unary-expression> ::= <postfix-expression>
+                     | ++ <unary-expression>
+                     | -- <unary-expression>
+                     | <unary-operator> <cast-expression>
+                     | sizeof <unary-expression>
+                     | sizeof <type-name>*/
+void unary_expression(){
+  postfix_expression();
+}
+/*Language #31
+<postfix-expression> ::= <primary-expression>
+                       | <postfix-expression> [ <expression> ]
+                       | <postfix-expression> ( {<assignment-expression>}* )
+                       | <postfix-expression> . <identifier>
+                       | <postfix-expression> -> <identifier>
+                       | <postfix-expression> ++
+                       | <postfix-expression> --*/
+void postfix_expression(){
+  primary_expression();
+}
+/*Language #32
+<primary-expression> ::= <identifier>
+                       | <constant>
+                       | <string>
+                       | ( <expression> )*/
+void primary_expression(){
+  // Identifier();
+  constant();
+}
+/*Language #33
+<constant> ::= <integer-constant>
+             | <character-constant>
+             | <floating-constant>
+             | <enumeration-constant>*/
+void constant(){
+  cout << "Debug Into #33 Constant" << endl;
+  cout << "Debug size of tokenVec " << tokenVec.size() << endl;
+  cout << "Debug tokenVec back value " << tokenVec.back()->value << endl;
+  sprintf(buf, "\t%s_const:\tDW\t%s\n", tokenVec[tokenVec.size() - 3]->value,tokenVec.back()->value );
+  fprintf(outfile,"%s",buf);
+}
 // Language Rule#48
 //<declaration> ::=  {<declaration-specifier>}+ {<init-declarator>}* ;
 void declaration(){
@@ -1103,7 +1177,11 @@ void init_declarator(){
   tokenVec.push_back(token);
   token = nextToken();
   // token = nextToken();
-  if (tokenVec.back()->sym == symEQ){
+  //Check is it symEQ
+  tokenVec.push_back(token);
+  token = nextToken();
+  cout << "****Debug is it symEQ " <<  token->value << endl;
+  if (token->sym == symEQ){
     cout << "Debug token "<< token->value << endl;
     declarator();
     cout << "Debug token "<< token->value << endl;
@@ -1116,7 +1194,15 @@ void init_declarator(){
 }
 // Language Rule#50
 void initializer(){
-
+  cout << "******Debug Into Initializer" << endl;
+  token = nextToken();
+  if (token->sym == symLCURLY){
+    //{ <initializer-list> }
+    // OR { <initializer-list> ,}
+  }
+  else {
+    conditional_expression();
+  }
 }
 // Language Rule#52
 void compound_statement(){
@@ -1124,10 +1210,11 @@ void compound_statement(){
   tokenVec.push_back(token);
   token = nextToken();
   cout << "Debug token Vec " << tokenVec.back()->value << endl;
-  if (token->sym == symLCURLY){
+  if (tokenVec.back()->sym == symLCURLY){
     cout << "Debug After LCURLY " << token->value << endl;
-    tokenVec.push_back(token);
-    token = nextToken();
+    // Because Init_declarator add one more tokenVec push_back
+    // tokenVec.push_back(token);
+    // token = nextToken();
     while((token->sym > symSCSBEGIN )and(token->sym < symTSEND)){
       declaration();
     }
@@ -1154,25 +1241,39 @@ void compound_statement(){
 */
 void Statement()
 {
-  // if (isResword(token->value) != -1)
-  // {
-  //   if (strcmp(token->value,"IF")==0)
-  //     IfStatement();
-  //   else if (strcmp(token->value,"BEGIN")==0)
-  //     CompoundStatement();
-  //   else if (strcmp(token->value,"WHILE")==0)
-  //     WhileStatement();
-  //   else if (strcmp(token->value,"READ")==0)
-  //     ReadStatement();
-  //   else if (strcmp(token->value,"WRITE")==0)
-  //     WriteStatement();
-  //   else if (strcmp(token->value,"CALL")==0)
-  //     CallStatement();
-  // }
-  // else if (token->sym == symIDENTIFIER)
-  //   AssignmentStatement();
-  // else
-  //   skip(statement, 23);
+  cout << "Debug Into Statemnet" << endl; 
+  if (isResword(token->value) != -1)
+  {
+    // <identifier> : <statement>, case, default
+    if (token->sym == symCOLON)
+      labeled_statement();
+    // expression-statement
+    else if (token->sym == symEQ){
+      expression_statement();
+    }
+    else if (token->sym == symLCURLY){
+      compound_statement();
+    }
+    else if ((token->sym == symIF) || (token->sym == symSWITCH)){
+      selection_statement();
+    }
+    else if ((token->sym == symWHILE)||(token->sym == symFOR) || (token->sym==symDO)){
+      iteration_statement();
+    }
+    else if ((token->sym == symBREAK) || (token->sym == symGOTO)
+    ||(token->sym == symCONTINUE)||(token->sym == symRETURN)){
+
+    }
+      jump_statement();
+  }
+  else if (token->sym == symIDENTIFIER)
+    AssignmentStatement();
+  else{
+    // skip(statement, 23);
+    cout << "Debug Should skip statement Into Error #23" << endl;
+  }
+    
+
   cout << "Debug Into Rule#53 Statement" << endl;
   cout << token->value << endl;
   if (token->sym ==symSEMI){
@@ -1190,6 +1291,33 @@ void labeled_statement(){
   Identifier();
   tokenVec.push_back(token);
   token = nextToken();
+}
+/*
+Language #55
+<expression-statement> ::= {<expression>}? ;*/
+void expression_statement(){
+	 
+}
+/*Language #56
+<selection-statement> ::= if ( <expression> ) <statement>
+                        | if ( <expression> ) <statement> else <statement>
+                        | switch ( <expression> ) <statement>*/
+void selection_statement(){
+	
+}
+/*Language #57
+<iteration-statement> ::= while ( <expression> ) <statement>
+                        | do <statement> while ( <expression> ) ;
+                        | for ( {<expression>}? ; {<expression>}? ; {<expression>}? ) <statement>*/
+void iteration_statement(){
+	
+}
+/*Language #58
+<jump-statement> ::= goto <identifier> ;
+                   | continue ;
+                   | break ;
+                   | return {<expression>}? ;*/
+void jump_statement(){
 
 }
 /*
@@ -1221,21 +1349,21 @@ void DEBUG_PRINT(char* DEBUG_STRING){
 /*
 ** Identifier Process
 */
-  void Identifier()
+void Identifier()
+{
+  if (token->sym == symIDENTIFIER)
   {
-    if (token->sym == symIDENTIFIER)
-    {
-      idobj=getIdobj(procStack[procTop-1],token->value);
-      if (idobj == NULL){
-        Error(26);
-        cout << " This is the place is wrong" << endl;
-      }
-      tokenVec.push_back(token);
-      token = nextToken();
+    idobj=getIdobj(procStack[procTop-1],token->value);
+    if (idobj == NULL){
+      Error(26);
+      cout << " This is the place is wrong" << endl;
     }
-    else
-      Error(21);
+    tokenVec.push_back(token);
+    token = nextToken();
   }
+  else
+    Error(21);
+}
 /*
 ** Number Process
 */

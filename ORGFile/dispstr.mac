@@ -1,17 +1,29 @@
 ; ************* dispstr.mac ************
 ;
 ; dispstr smem
-;   將smem記憶體處字串顯示於螢幕
-;   smem : 記憶體位址
+;   Make smem memory string show on monitor
+;   smem : Memory Address
 ;
 %ifndef DISPSTR_MAC
 %define DISPSTR_MAC
-%MACRO dispstr 1     ;參數smem位址
-       PUSHA         ;儲存原來暫存器資料
-       MOV   DX, %1  ;字串位址存入DX
-       MOV   AH, 09H ;設定顯示字串功能
-       INT   21H     ;顯示字串
-       POPA          ;恢復原來暫存器資料
+%MACRO dispstr 1     ;Refer smem Address
+;https://stackoverflow.com/questions/6837392/how-to-save-the-registers-on-x86-64-for-an-interrupt-service-routine
+;      PUSHA        ;Store the original register data
+                     ;In fact, "manually pushing" the regs is the only way on AMD64 
+                     ;since PUSHA doesn't exist there.
+       push  rdi         ; save off rdi
+;       mov   rdi, %1     ; load the address of the string
+;       call  _dispstr    ; print the string
+;       POP   rdi         ; restore rdi
+;       PUSH   edb
+;       MOV    ebp, esp
+;       MOV    rax, 0x02000004         ; system call for write
+;       MOV    rdi, 1                  ; file handle 1 is stdout
+;       MOV    rsi, ebp            ; address of string to output
+;       MOV   RDI, %1
+;       MOV   DX, %1  ;Store char into DX
+;        MOV   AH, 09H ;Configure the display string
+;        INT   21H     ;Show string
+;       POPA          ;Restore original register data
 %ENDMACRO
 %endif
-

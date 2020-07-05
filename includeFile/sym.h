@@ -65,3 +65,13 @@
 // C++ Define symbol
 #define symLCURLY         70
 #define symRCURLY         71
+// C++ statement
+#define symSMSTART        90
+#define symCOLON          91
+#define symSWITCH         92
+#define symFOR            93
+#define symBREAK          94
+#define symGOTO           95
+#define symCONTINUE       96
+#define symRETURN         97
+#define symSMEND          100

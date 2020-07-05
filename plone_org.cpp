@@ -253,65 +253,57 @@ using namespace std;
 /*
 ** Language Rule#4 <ConstDeclaration>
 */
-  void ConstDeclaration()
+void ConstDeclaration()
+{
+  if (strcmp(token->value, "CONST")==0)
   {
-    if (strcmp(token->value, "CONST")==0)
+    token = nextToken();
+    if (token->sym == symIDENTIFIER)
+    {
+      varlistadd(procStack[procTop-1], 
+        newIdobj(token->value, token->sym, symCONST, 
+        level, procStack[procTop-1]->name));
+      strcpy(id, procStack[procTop-1]->name);
+      strcat(id, "_");
+      strcat(id, token->value);
+      sprintf(buf, "%s\tDB\t", id);
+      fprintf(outfile, buf);
+      token = nextToken();
+    }
+    if (token->sym == symEQ)
     {
       token = nextToken();
-      if (token->sym == symIDENTIFIER)
-      {
-        varlistadd(procStack[procTop-1], 
-          newIdobj(token->value, token->sym, symCONST, 
-          level, procStack[procTop-1]->name));
-        strcpy(id, procStack[procTop-1]->name);
-        strcat(id, "_");
-        strcat(id, token->value);
-        sprintf(buf, "%s\tDB\t", id);
-        fprintf(outfile, buf);
-        token = nextToken();
-      }
-      if (token->sym == symEQ)
+      sprintf(buf, "'%s','$'\n", token->value);
+      fprintf(outfile, buf);
+      token = nextToken();
+      while (token->sym == symCOMMA)
       {
         token = nextToken();
-        sprintf(buf, "'%s','$'\n", token->value);
-        fprintf(outfile, buf);
-        token = nextToken();
-        while (token->sym == symCOMMA)
+        if (token->sym == symIDENTIFIER)
+        {
+          varlistadd(procStack[procTop-1], 
+            newIdobj(token->value, token->sym, symCONST, 
+            level, procStack[procTop-1]->name));
+          sprintf(buf, "%s_%s\tDB\t",
+            procStack[procTop-1]->name, token->value);
+          fprintf(outfile, buf);
+          token = nextToken();
+        }
+        if (token->sym == symEQ)
         {
           token = nextToken();
-          if (token->sym == symIDENTIFIER)
-          {
-            varlistadd(procStack[procTop-1], 
-              newIdobj(token->value, token->sym, symCONST, 
-              level, procStack[procTop-1]->name));
-            sprintf(buf, "%s_%s\tDB\t",
-              procStack[procTop-1]->name, token->value);
-            fprintf(outfile, buf);
-            token = nextToken();
-          }
-          if (token->sym == symEQ)
-          {
-            token = nextToken();
-            sprintf(buf, "'%s','$'\n", token->value);
-            fprintf(outfile, buf);
-            token = nextToken();
-          }
-          else
-            Error(5);
-        }
-        if (token->sym == symSEMI)
+          sprintf(buf, "'%s','$'\n", token->value);
+          fprintf(outfile, buf);
           token = nextToken();
+        }
         else
-        {
-          Error(6);
-          skip(statement, 23);
-          if (token->sym == symSEMI)
-            token = nextToken();
-        }
+          Error(5);
       }
+      if (token->sym == symSEMI)
+        token = nextToken();
       else
       {
-        Error(5);
+        Error(6);
         skip(statement, 23);
         if (token->sym == symSEMI)
           token = nextToken();
@@ -319,9 +311,17 @@ using namespace std;
     }
     else
     {
-      Error(4);
+      Error(5);
+      skip(statement, 23);
+      if (token->sym == symSEMI)
+        token = nextToken();
     }
   }
+  else
+  {
+    Error(4);
+  }
+}
 /*
 ** Language Rule#5 <VarDeclaration>
 */
